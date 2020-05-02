@@ -119,12 +119,30 @@ class Population:
         self.nDead = np.zeros(nDays+1)
         self.nDead[0] = 0
 
+        self.testInf = np.zeros(nDays + 1)
+        self.testInf[0] = 0
+        self.testHealthy = np.zeros(nDays + 1)
+        self.testHealthy[0] = 0
+        self.nTests = np.zeros(nDays + 1)
+        self.nTests[0] = 0
+
+    def test(self,n_tests,day):
+        """
+            Test a SRS of n_tests individuals and log # noninfected, # infected
+            Currently assumes tests are perfect and sample is SRS
+        """
+        sample = random.sample(list(self.statuses),k = n_tests)
+        self.testInf[day] = len(np.where(np.array(sample) == INF)[0])
+        self.testHealthy[day] = n_tests - self.testInf[day]
+        self.nTests[day] = n_tests
+
     def showConnections(self):
         plt.figure()
         sns.heatmap(self.C,cmap='hot')
         plt.suptitle('Population Connectivity')
 
-    def plotStatistics(self):
+    # would be nice to have this in seaborn
+    def plotStatistics(self,testing = False):
         # mat = np.array((self.nSus,self.nInf,self.nRec,self.nDead)).T
         # df = pd.DataFrame(mat, columns = ['Susceptible', 'Infected', 'Recovered', 'Dead'])
         # plt.figure()
@@ -134,6 +152,14 @@ class Population:
         plt.plot(self.nInf,label = "Infected")
         plt.plot(self.nRec,label = "Recovered")
         plt.plot(self.nDead,label = "Dead")
+        if testing == True:
+            # bernouilli squared error
+            testEst = self.testInf * self.size / self.nTests
+            stderror = self.size * np.sqrt((self.testInf / self.nTests) * (1 - self.testInf / self.nTests) / self.nTests)
+            plt.plot(testEst,label = "Infected estimate")
+            plt.errorbar(list(range(len(testEst))),testEst,stderror)
+
+
         plt.legend()
-        # plt.title('Population Statistics over Time for Average %i Interactions'%(int(self.size * self.p_connect)))
-        plt.title('\"Opening the Country Up\": Population Statistics over Time for Average 3->10 Interactions')
+        plt.title('Population Statistics over Time for Average %i Interactions'%(int(self.size * self.p_connect)))
+        # plt.title('\"Opening the Country Up\": Population Statistics over Time for Average 3->10 Interactions')

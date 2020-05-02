@@ -29,9 +29,9 @@ age_dist = age_dist / np.sum(age_dist) # probability distribution over ages
 # create a population under some parameters and run a simulation of infection over time
 # note that one timestep is a day
 nDays = 90
-size = 20000 # population of guilford (2016)
+size = 2000 # population of guilford (2016)
 I0 = 5
-p_connect = 3 / size # have connections with avg of 10 people
+p_connect = 4 / size # have connections with avg of 10 people
 
 population = Population(size,age_dist,I0,p_connect)
 
@@ -45,29 +45,16 @@ widgets = [progressbar.Percentage(), progressbar.Bar()]
 bar = progressbar.ProgressBar(widgets=widgets,maxval=nDays).start()
 for day in range(1,nDays+1): # count 0 as initial day
     bar.update(day)
-    # 0. modulate connectivity based on how much social distancing is happening
-        # random.choice([all indices]) #
-
-    if day == 30: # open up at day 30
-        p_connect_new = 10 / size
-        # sparse, (currently) uniform, and static, connectivity matrix
-        population.C = rnd.binomial(1,2 * p_connect_new,size ** 2).reshape((size,size)) # symmetric ?
-        np.fill_diagonal(population.C,0) # can't infect yourself you wanker
-
-        widgets = [progressbar.Percentage(), progressbar.Bar()]
-        bar = progressbar.ProgressBar(widgets=widgets,maxval=size).start()
-        counter = 0
-        for citizen in range(size):
-            counter += 1
-            bar.update(counter)
-            population.people[citizen].defineConnections(population.C[citizen,:])
 
     # 1. propagate infection and advance infections
     nInfected = len(population.infectedPool)
     infectCount = 0
 
-    for infected in population.infectedPool:
-        infectCount += 1
+
+
+    # draw a random vector of # interax of len(infectedPool) w/ Pois or Binomial noise
+    for infected in population.infectedPool: # use iter to get the index
+        infectCount += 1 # then we can also get rid of the infectCount
         new_status = infected.step()
         if new_status != INF: # change status
             population.infectedPool.remove(infected) # take out of infected pool
@@ -88,10 +75,18 @@ for day in range(1,nDays+1): # count 0 as initial day
     population.nInf[day] = len(np.where(population.statuses == INF)[0])
     population.nDead[day] = len(np.where(population.statuses == DEAD)[0])
 
+    # 3. test (demo of dynamic testing)
+    if day < 30:
+        n_tests = 50
+    else:
+        n_tests = 500
+    population.test(n_tests,day)
+
 plt.figure()
-sns.heatmap(population.statuses.reshape((200,100)),cbar = False)
-# plt.title("Heatmap of Individual Outcomes for Average %i Interactions"%(int(size * p_connect)))
-plt.title("'\"Opening the Country Up\": Heatmap of Individual Outcomes for Average 3->10 Interactions")
-population.plotStatistics()
+# should really get a line in here to dynamically reshape lol
+sns.heatmap(population.statuses.reshape((50,40)),cbar = False)
+plt.title("Heatmap of Individual Outcomes for Average %i Interactions"%(int(size * p_connect)))
+# plt.title("'\"Opening the Country Up\": Heatmap of Individual Outcomes for Average 3->10 Interactions")
+population.plotStatistics(testing = True)
 print("Dead:",population.nDead[-1])
 plt.show()
