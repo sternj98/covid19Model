@@ -83,6 +83,7 @@ for day in range(1,nDays+1): # count 0 as initial day
     population.test(n_tests,day)
 
 plt.figure()
+
 # should really get a line in here to dynamically reshape lol
 sns.heatmap(population.statuses.reshape((50,40)),cbar = False)
 plt.title("Heatmap of Individual Outcomes for Average %i Interactions"%(int(size * p_connect)))
