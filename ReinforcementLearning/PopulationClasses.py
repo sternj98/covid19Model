@@ -91,12 +91,11 @@ class Population:
         self.C = rnd.binomial(1,2 * p_connect,size ** 2).reshape((size,size)) # symmetric ?
         np.fill_diagonal(self.C,0) # can't infect yourself you wanker
 
-        widgets = [progressbar.Percentage(), progressbar.Bar()]
-        bar = progressbar.ProgressBar(widgets=widgets,maxval=size).start()
+        # widgets = [progressbar.Percentage(), progressbar.Bar()]
+        # bar = progressbar.ProgressBar(widgets=widgets,maxval=size).start()
         counter = 0
         for citizen in range(size):
             counter += 1
-            bar.update(counter)
             self.people[citizen].defineConnections(self.C[citizen,:])
 
         # infect initial people

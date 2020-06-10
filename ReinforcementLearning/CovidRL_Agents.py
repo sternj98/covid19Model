@@ -17,11 +17,13 @@ from DeepLearningUtils import DQN, Buffer
 
 # a class for agents that use feedforward neural networks to calculate Q(s,a)
 class DeepQAgent():
-    def __init__(self,state_dim,action_dim):
+    def __init__(self):
+        state_dim = 1 # [n_tests,percentInfected]
+        action_dim = 10 # allow individuals to see up to 10 people
         self.policy_net = DQN(state_dim,action_dim) # network used to calculate policy
         self.target_net = DQN(state_dim,action_dim) # network used to calculate target
         self.target_net.eval() # throw that baby in eval mode because we don't care about its gradients
-        self.target_update = 50 # update our target network every 50 timesteps
+        self.target_update = 1000 # update our target network every 50 timesteps
         self.replay_buffer = Buffer() # replay buffer implemented as a list
         self.action_dim = action_dim
 
@@ -34,11 +36,10 @@ class DeepQAgent():
 
 #         self.optimizer = torch.optim.SGD(self.policy_net.parameters(),lr=0.001, momentum=0.9)
 #         self.optimizer = torch.optim.RMSprop(self.policy_net.parameters()) # experiment w/ different optimizers
-        self.optimizer = torch.optim.Adam(self.policy_net.parameters())
+        self.optimizer = torch.optim.Adam(self.policy_net.parameters(),lr = 0.001)
         self.huber_loss = F.smooth_l1_loss
 
     def select_action(self,state):
-        state = torch.FloatTensor(state).float()
         if rnd.rand() < self.epsilon: # greedy action
             with torch.no_grad():
                 qvals = self.policy_net.forward(state) # forward run through the policy network
@@ -72,7 +73,6 @@ class DeepQAgent():
         rewards = torch.FloatTensor(rewards)
         next_states = torch.FloatTensor(next_states)
 
-#         print(states.shape)
         curr_Q = self.policy_net.forward(states).gather(1,actions.unsqueeze(1)) # calculate the current Q(s,a) estimates
         next_Q = self.target_net.forward(next_states) # calculate Q'(s,a) (EV)
         max_next_Q = torch.max(next_Q,1)[0] # equivalent of taking a greedy action

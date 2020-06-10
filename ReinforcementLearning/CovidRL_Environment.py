@@ -33,7 +33,7 @@ class DiseaseEnvironment():
     """
         An environment for control of exponential systems
     """
-    def __init__(self,trial_len,pop_size,I0,p_connect,age_dist,p_infect):
+    def __init__(self,trial_len,pop_size,I0,p_connect,age_dist,p_infect,n_tests):
         self.trial_len = trial_len
         self.pop_size = pop_size
         self.I0 = I0
@@ -46,9 +46,11 @@ class DiseaseEnvironment():
         self.episode_complete = False
 
         self.interact_rew = .1
-        self.infect_penalty = .1
+        self.infect_penalty = 50.
         self.dead_penalty = 5.
         self.test_penalty = .1
+
+        self.n_tests = n_tests
 
         self.reset()
 
@@ -57,16 +59,21 @@ class DiseaseEnvironment():
         self.day = 0
         # initialize a new population
         self.population = Population(self.pop_size,self.age_dist,self.I0,self.p_connect)
-        population.prepSimulation(self.trial_len,self.p_infect)
+        self.population.prepSimulation(self.trial_len,self.p_infect)
+        self.state = [0]
 
     def execute_action(self, action): # execute the agent's action and return reward
-        n_tests, policy = action # unpack action
         self.day += 1
-        self.population.step(self.day,n_tests,policy)
+        self.population.step(self.day,self.n_tests,action)
 
-        rew = self.interact_rew * policy * self.pop_size
-              - self.infect_penalty * self.population.nInf[day]
-              - self.dead_penalty * self.population.nDead[day]
-              - self.test_penalty * n_tests[day]
+        rew = (self.interact_rew * action * self.pop_size
+              - self.infect_penalty * self.population.nInf[self.day]
+              - self.dead_penalty * self.population.nDead[self.day]
+              - self.test_penalty * self.n_tests)
+
+        self.state = [self.population.testInf[self.day]]
+
+        if self.day == self.trial_len:
+            self.episode_complete = True
 
         return rew

@@ -28,6 +28,7 @@ class DQN(nn.Module):
             nn.Linear(124, self.output_dim),)
 
     def forward(self, state):
+        state = torch.FloatTensor(state).float()
         qvals = self.ff(state)
         return qvals
 
